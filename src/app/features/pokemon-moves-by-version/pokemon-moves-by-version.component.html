@@ -1,0 +1,121 @@
+<div class="mvg-wrapper">
+
+  <!-- Loading -->
+  <div class="mvg-loading" *ngIf="loading()">
+    <span class="spinner"></span>
+    <span>Caricamento mosse per versione...</span>
+  </div>
+
+  <ng-container *ngIf="!loading() && versionGroups().length">
+
+    <!-- TAB BAR -->
+    <div class="tab-bar">
+      @for (g of versionGroups(); track g) {
+      <button class="tab-btn" [class.active]="activeTab() === g.versionGroup" (click)="selectTab(g.versionGroup)">
+        {{ g.versionGroupLabel }}
+        <span class="tab-count">{{ getLevelUpCount(g) }}</span>
+      </button>
+      }
+    </div>
+
+    <!-- GRIGLIA MOSSE del tab attivo, suddivisa per metodo -->
+    <ng-container *ngIf="activeRows() as group">
+      @for (section of rowsByMethod(); track section) {
+      <div class="method-block">
+
+        <!-- Intestazione metodo -->
+        <div class="method-header">
+          <span class="method-icon">
+            <ng-container [ngSwitch]="section.method">
+              <span *ngSwitchCase="'level-up'">⬆</span>
+              <span *ngSwitchCase="'machine'">💿</span>
+              <span *ngSwitchCase="'tutor'">🎓</span>
+              <span *ngSwitchCase="'egg'">🥚</span>
+              <span *ngSwitchDefault>✦</span>
+            </ng-container>
+          </span>
+          {{ section.methodIt }}
+          <span class="method-icon">
+            <span class="method-filter" [class.active]="isActiveFilter('state', section)" (click)="filterBy('state', section)">stato</span>
+            <span class="method-filter" [class.active]="isActiveFilter('physical', section)" (click)="filterBy('physical', section)">fisica</span>
+            <span class="method-filter" [class.active]="isActiveFilter('special', section)" (click)="filterBy('special', section)">speciale</span>
+          </span>
+          <span class="method-count">{{ section.rows.length }} mosse</span>
+        </div>
+
+        <!-- Tabella -->
+        <div class="table-wrap">
+          <table class="moves-vg-table">
+            <thead>
+              <tr>
+                <th class="col-name text-left">Nome mossa</th>
+                <th class="text-center">Tipo</th>
+                <th class="text-center">Categoria</th>
+                <th class="text-right">Potere</th>
+                <th class="text-right">Precisione</th>
+                <th class="text-center">PP</th>
+                <th class="col-level">Livello</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of section.rows; track row) {
+              <tr class="move-row" [title]="row.detail.flavor_text" (click)="showMoveInfo(row.id)">
+                <!-- NOME -->
+                <td class="cell-name"> {{ row.detail.nameIt }} </td>
+                <!-- TIPO -->
+                <td class="text-center w-100">
+                  <span class="type-badge" [style.background]="getTypeColor(row.detail.type)">
+                    {{ getTypeName(row.detail.type) || '—' }}
+                  </span>
+                </td>
+                <!-- CATEGORIA -->
+                <td class="text-center w-100">
+                  <span class="dmg-pill" [style.background]="DAMAGE_CLASS_COLOR[row.detail.damageClass]">
+                    {{ DAMAGE_CLASS_IT[row.detail.damageClass] }}
+                  </span>
+                </td>
+                <!-- POTENZA -->
+                <td class="num-cell text-right w-50">{{ row.detail.power ?? '—' }}</td>
+                <!-- PRECISIONE -->
+                <td class="num-cell text-right w-50">
+                  {{ row.detail.accuracy != null ? row.detail.accuracy + '%' : '—' }}
+                </td>
+                <!-- PP -->
+                <td class="num-cell text-center w-50">{{ row.detail.pp ?? '—' }}</td>
+                <!-- LIVELLO -->
+                <td class="cell-level w-100">
+                  <span class="level-badge" *ngIf="section.method === 'level-up' && row.versionRow.levelLearnedAt > 1">
+                    Lv. {{ row.versionRow.levelLearnedAt }}
+                  </span>
+                  <span class="level-badge evo"
+                    *ngIf="section.method === 'level-up' && row.versionRow.levelLearnedAt === 0">
+                    Evo.
+                  </span>
+                  <span class="level-badge"
+                    *ngIf="section.method !== 'level-up' || row.versionRow.levelLearnedAt === 1">
+                    -
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="showDetail().show && showDetail().id === row.id">
+                <td colspan="9" class="group-divider">
+                  {{row.detail.flavor_text}}
+                </td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      }
+    </ng-container>
+
+  </ng-container>
+
+  <!-- Empty state -->
+  <p class="mvg-empty" *ngIf="!loading() && !versionGroups().length">
+    Nessuna mossa trovata per questo Pokémon.
+  </p>
+
+</div>

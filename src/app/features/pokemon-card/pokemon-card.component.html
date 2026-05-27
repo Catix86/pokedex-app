@@ -1,0 +1,18 @@
+<a class="card" [routerLink]="['/pokemon', page, pokemon.id]">
+    <div class="card-bg" [style.background]="cardGradient"></div>
+
+    <span class="card-id">#{{ service.padId(pokemon.id) }}</span>
+
+    <div class="card-img-wrap">
+        <img [src]="pokemon.sprite" [alt]="pokemon.name" class="card-img" loading="lazy" (error)="onImgError($event)" />
+    </div>
+
+    <div class="card-body">
+        <h3 class="card-name">{{ service.formatName(pokemon.name) }}</h3>
+        <div class="card-types">
+            @for(type of pokemon.types; track type) {
+            <span class="type-badge" [style.background]="getTypeColor(type)">{{ getTypeName(type) }}</span>
+            }
+        </div>
+    </div>
+</a>

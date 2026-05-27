@@ -1,0 +1,259 @@
+<div class="detail-page">
+  <!-- LOADING -->
+  <div class="loading-overlay" *ngIf="loading()">
+    <div class="poke-ball-spinner">
+      <div class="ball-top"></div>
+      <div class="ball-mid"></div>
+      <div class="ball-bot"></div>
+    </div>
+    <p>Caricamento...</p>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-state" *ngIf="error()">
+    <p>{{ error() }}</p>
+    <button (click)="goBack()">Torna alla lista</button>
+  </div>
+
+  <!-- CONTENT -->
+  <ng-container *ngIf="detail() as d">
+
+    <!-- ======== HERO ======== -->
+    <div class="hero"
+      [style.background]="'linear-gradient(135deg, ' + getTypeColor(d.types[0].type.name) + '33, ' + (d.types[1] ? getTypeColor(d.types[1].type.name) : getTypeColor(d.types[0].type.name)) + '22)'">
+
+      <!-- NAV -->
+      <div class="hero-nav">
+        <button class="back-btn" (click)="goBack()">
+          <span>←</span> Tutti i Pokémon
+        </button>
+        @if (d.id <= TOTAL_POKEMON) { <div class="pokemon-nav">
+          <button class="nav-arrow" [disabled]="d.id <= 1" (click)="goToId(-1)">‹</button>
+          @if (!editMode()) {
+          <span class="nav-id" (click)="startEdit()">#{{ service.padId(d.id)}}</span>
+          } @else {
+          <input #idInput class="nav-id-input" type="number" min="1" max="1025" [value]="typedId()"
+            (input)="typedId.set($any($event.target).value)" (keydown.enter)="goToTypedId(typedId())"
+            (blur)="editMode.set(false)" autofocus />
+          }
+          <button class="nav-arrow" [disabled]="d.id >= 1025" (click)="goToId(1)">›</button>
+      </div>
+      }
+    </div>
+
+    <!-- Hero body -->
+    <div class="hero-body">
+      <!-- Artwork -->
+      <div class="artwork-col">
+        <div class="artwork-wrap">
+          <div class="artwork-glow" [style.background]="getTypeColor(d.types[0].type.name)"></div>
+          <img class="artwork" [src]="getMainSprite()" [alt]="d.name" (error)="onImgError($event)" />
+          <button class="shiny-toggle" (click)="toggleShiny()" [class.active]="showShiny()">
+            ✦ {{ showShiny() ? 'Shiny ON' : 'Shiny' }}
+          </button>
+        </div>
+
+        <!-- VARIETY TABS -->
+        <div class="variety-tabs" *ngIf="varieties().length > 0">
+          <p class="variety-label">Forme / Varietà</p>
+          <div class="variety-tab-list" [class.carousel]="varieties().length > 3">
+            <button *ngFor="let v of varieties()" class="variety-tab" [class.active]="v.id === d.id"
+              [class.default]="v.isDefault" (click)="goToVariety(v)"
+              [title]="v.label + (v.isDefault ? ' (Default)' : '')">
+              <img class="variety-sprite" [src]="v.sprite" [alt]="v.label" (error)="onVarietyImgError($event, v.id)" />
+              <span class="variety-name">{{ v.label }}</span>
+              <span class="variety-default-dot" *ngIf="v.isDefault" title="Forma default">●</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="hero-info">
+        <p class="genus">{{ getGenus() }}
+          <span class="ultimate" *ngIf="species()?.is_mythical || species()?.is_legendary">
+            <span class="base mythical" *ngIf="species()?.is_mythical">misterioso</span>
+            <span class="base legendary" *ngIf="species()?.is_legendary">leggendario</span>
+          </span>
+        </p>
+        <h1 class="pokemon-name">
+          <a href="https://wiki.pokemoncentral.it/{{ service.formatName(d.name) }}" target="_blank" class="box"
+            [attr.data-param]="species()?.color?.name" rel="noopener noreferrer"
+            title="Apri la pagina del Pokemon in pokemoncentral.it">
+            {{ service.formatName(d.name) }}
+          </a>
+        </h1>
+
+        <!-- TIPI -->
+        <div class="types-row">
+          <span *ngFor="let t of d.types" class="type-badge"
+            [style.background]="getTypeColor(t.type.name)">{{ getTypeName(t.type.name) }}</span>
+        </div>
+
+        <p class="flavor-text" *ngIf="getFlavorText()">
+          "{{ getFlavorText() }}"
+        </p>
+
+        <section class="section-top" *ngIf="species() as sp">
+          <div class="info-top-item">
+            <span class="info-label">Generazione</span>
+            <span class="info-value">{{ getGeneration() }}</span>
+          </div>
+          <div class="info-top-item">
+            <span class="info-label">Tasso di crescita</span>
+            <span class="info-value">{{ service.getGrowthRateName(sp.growth_rate?.name || 'N.D.') }}</span>
+          </div>
+          <div class="info-top-item">
+            <span class="info-label">Tasso di cattura</span>
+            <span class="info-value">{{ getCatchRateDescription(sp.capture_rate) }}</span>
+          </div>
+        </section>
+
+        <!-- Quick stats -->
+        <div class="quick-stats">
+          <div class="qs-item">
+            <span class="qs-value">{{ heightM || 'N.D.' }} m</span>
+            <span class="qs-label">Altezza</span>
+          </div>
+          <div class="qs-divider"></div>
+          <div class="qs-item">
+            <span class="qs-value">{{ weightKg || 'N.D.' }} kg</span>
+            <span class="qs-label">Peso</span>
+          </div>
+          <div class="qs-divider"></div>
+          <div class="qs-item">
+            <span class="qs-value">{{ d.base_experience || 'N.D.' }}</span>
+            <span class="qs-label">Exp. Base</span>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- ======== SECTIONS ======== -->
+<div class="sections">
+
+  <!-- Abilità -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="section-icon">◈</span>
+      Abilità
+    </h2>
+    <div class="abilities-grid">
+      @for (a of d.abilities; track a) {
+      <div class="ability-chip" [class.hidden]="a.is_hidden" (click)="showAbilityInfo(a)">
+        <span class="ability-name" [title]="getAbilityDescription(a)">{{ getAbilityName(a) }}</span>
+        <span class="ability-tag" *ngIf="a.is_hidden">nascosta</span>
+      </div>
+      }
+    </div>
+    @if (showInfo()) {
+    <div class="ability-info">◈ {{ abilityInfo() }}</div>
+    }
+  </section>
+
+  <!-- STATISTICHE BASE -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="section-icon">◈</span>
+      Statistiche Base
+      <span class="total-badge">TOT {{ totalStats }}</span>
+    </h2>
+    <div class="stats-list">
+      @for (s of getStatistics(d.stats); track s) {
+      <div class="stat-row" [class.total-stats]="s.stat.name === 'total'">
+        <span class="stat-name">{{ STAT_LABELS[s.stat.name] }}</span>
+        <span class="stat-val" [style.color]="getStatColor(s)">
+          {{ s.base_stat }}
+        </span>
+        <div class="stat-bar-bg">
+          <div class="stat-bar-fill" [style.width.%]="getStatPercent(s)" [style.background]="getStatColor(s)"></div>
+        </div>
+      </div>
+      }
+    </div>
+  </section>
+
+  <!-- RESISTENZE E VULNERABILITÀ -->
+  <section class="section section-effectiveness">
+    <h2 class="section-title"><span class="section-icon">◈</span> Resistenze e Vulnerabilità</h2>
+    <div class="effectiveness-table">
+      <div class="eff-row" *ngFor="let row of getTypeEffectiveness()">
+        <div class="eff-label" [class]="multClass(row.multiplier)">
+          <span class="eff-mult">{{ formatMultiplier(row.multiplier) }}</span>
+        </div>
+        <div class="eff-types">
+          <span *ngFor="let t of row.types" class="eff-type-badge" [style.background]="TYPE_COLORS[t]"
+            [style.border]="t === 'none' ? '2px dotted' : ''"
+            [style.border-color]="t === 'none' ? '#CCC' : ''">{{ TYPE_NAMES_IT[t] }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVOLUZIONI -->
+  <section class="section">
+    <h2 class="section-title"><span class="section-icon">◈</span> Evoluzioni</h2>
+
+    <div class="evo-chain" *ngIf="evolutions().length; else noEvo">
+      <ng-container *ngFor="let stage of evolutions(); let i = index">
+
+        <!-- Freccia tra stage (non prima del primo) -->
+        <div class="evo-arrow-col" *ngIf="i > 0">
+          <div class="evo-arrow-group" *ngFor="let node of stage.nodes">
+            <div class="evo-arrow">→</div>
+            <div class="evo-trigger" *ngIf="getEvolutionTrigger(node.details)">
+              {{ getEvolutionTrigger(node.details) }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Nodi dello stage -->
+        <div class="evo-stage">
+          <div class="evo-node" *ngFor="let node of stage.nodes" (click)="goToPokemon(node.id)"
+            [class.current]="node.id === d.id">
+            <img [src]="node.sprite" [alt]="node.name" (error)="onEvoImgError($event, node.id)" />
+            <span class="evo-name">{{ service.formatName(node.name) }}</span>
+            <span class="evo-id">#{{ service.padId(node.id) }}</span>
+          </div>
+        </div>
+
+      </ng-container>
+    </div>
+
+    <ng-template #noEvo>
+      <p class="empty-msg">Questo Pokémon non si evolve.</p>
+    </ng-template>
+  </section>
+
+  <!-- POKEDEX -->
+  <section class="section" *ngIf="species() as sp">
+    <h2 class="section-title">
+      <span class="section-icon">◈</span>
+      Pokedex
+    </h2>
+    <div class="info-grid">
+      <div class="info-item" *ngFor="let pk of getFilteredPokedexNumers(sp.pokedex_numbers)">
+        <span class="info-label">{{ pk.pokedex.name }}</span>
+        <span class="info-value">{{ pk.entry_number }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- INCONTRI -->
+  <section class="section">
+    <h2 class="section-title"><span class="section-icon">◈</span> Incontri per Versione</h2>
+    <app-pokemon-encounters [detail]="d" />
+  </section>
+
+  <!-- MOSSE -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="section-icon">◈</span> Mosse
+    </h2>
+    <app-pokemon-moves-by-version [detail]="d" />
+  </section>
+
+</div>
+</ng-container>
+</div>

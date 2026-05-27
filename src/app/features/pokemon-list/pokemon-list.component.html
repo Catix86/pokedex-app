@@ -1,0 +1,147 @@
+<div class="list-page">
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">PokéDex</span>
+        <span class="logo-sub">Database Nazionale</span>
+      </div>
+      <div class="header-stats" *ngIf="!loading()">
+        <span class="stat-chip">
+          <span class="stat-num">{{ resultCount() }}</span>
+          <span class="stat-label">Pokémon trovati</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- FILTRI -->
+  <section class="filters-bar">
+    <div class="filters-inner">
+      <!-- Search -->
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Nome o numero..."
+          [value]="searchQuery()"
+          (input)="onSearch($any($event.target).value)"
+        />
+      </div>
+
+      <!-- Tipo -->
+      <select
+        class="filter-select"
+        [value]="selectedType()"
+        (change)="onTypeChange($any($event.target).value)"
+      >
+        <option value="">Tutti i tipi</option>
+        <option *ngFor="let t of types" [value]="t">
+          {{ getTypeName(t) | titlecase }}
+        </option>
+      </select>
+
+      <!-- Generazione -->
+      <select
+        class="filter-select"
+        [value]="selectedGen()"
+        (change)="onGenChange($any($event.target).value)"
+      >
+        <option *ngFor="let g of generations" [value]="g.value">
+          {{ g.label }}
+        </option>
+      </select>
+
+      <!-- Ordinamento -->
+      <div class="sort-group">
+        <button
+          class="sort-btn"
+          [class.active]="sortBy() === 'id'"
+          (click)="onSortChange('id')"
+        >#ID</button>
+        <button
+          class="sort-btn"
+          [class.active]="sortBy() === 'name'"
+          (click)="onSortChange('name')"
+        >A–Z</button>
+      </div>
+
+      <!-- Clear -->
+      <button class="clear-btn" (click)="clearFilters()" title="Azzera filtri">
+        ✕ Reset
+      </button>
+    </div>
+
+    <!-- Tipo selezionato badge -->
+    <div class="active-type-bar" *ngIf="selectedType()">
+      <span
+        class="type-badge-lg"
+        [style.background]="getTypeColor(selectedType())"
+      >{{ selectedType() | titlecase }}</span>
+    </div>
+  </section>
+
+  <!-- LOADING STATE -->
+  <div class="loading-state" *ngIf="loading()">
+    <div class="poke-ball-spinner">
+      <div class="ball-top"></div>
+      <div class="ball-mid"></div>
+      <div class="ball-bot"></div>
+    </div>
+    <p>Caricamento Pokédex…</p>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div class="error-state" *ngIf="error()">
+    <span class="error-icon">⚠</span>
+    <p>{{ error() }}</p>
+    <button (click)="ngOnInit()">Riprova</button>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div class="empty-state" *ngIf="!loading() && !error() && resultCount() === 0">
+    <div class="empty-icon">?</div>
+    <h3>Nessun Pokémon trovato</h3>
+    <p>Prova a modificare i filtri di ricerca.</p>
+    <button class="clear-btn" (click)="clearFilters()">Azzera filtri</button>
+  </div>
+
+  <!-- GRIGLIA POKEMON -->
+  <main class="pokemon-grid" *ngIf="!loading() && !error() && resultCount() > 0">
+    <app-pokemon-card
+      *ngFor="let p of paginated(); trackBy: trackByPokemon"
+      [pokemon]="p"
+      [page]="currentPage()"
+    />
+  </main>
+
+  <!-- PAGINAZIONE -->
+  <nav class="pagination" *ngIf="totalPages() > 1">
+    <button
+      class="page-btn nav-btn"
+      [disabled]="currentPage() === 1"
+      (click)="goToPage(currentPage() - 1)"
+    >‹</button>
+
+    <button
+      *ngFor="let p of pageNumbers()"
+      class="page-btn"
+      [class.active]="p === currentPage()"
+      [class.ellipsis]="p === '...'"
+      [disabled]="p === '...'"
+      (click)="goToPage(p)"
+    >{{ p }}</button>
+
+    <button
+      class="page-btn nav-btn"
+      [disabled]="currentPage() === totalPages()"
+      (click)="goToPage(currentPage() + 1)"
+    >›</button>
+  </nav>
+
+  <footer class="site-footer">
+    <p>Dati forniti da <a href="https://pokeapi.co" target="_blank" rel="noopener">PokéAPI</a> · Pokémon © Nintendo / Game Freak</p>
+  </footer>
+</div>

@@ -1,0 +1,83 @@
+<div class="enc-wrapper">
+
+  <!-- Loading -->
+  <div class="enc-loading" *ngIf="loading()">
+    <span class="spinner"></span>
+    <span>Caricamento incontri...</span>
+  </div>
+
+  <!-- Nessun incontro disponibile -->
+  <div class="enc-empty" *ngIf="!loading() && noData()">
+    <span class="enc-empty-icon">🗺</span>
+    <p>Questo Pokémon non si incontra in natura in nessun gioco.<br>
+       Potrebbe essere ottenibile solo tramite evoluzione, scambio o evento.</p>
+  </div>
+
+  <ng-container *ngIf="!loading() && !noData() && getFilteredEncounters().length">
+
+    <!-- TAB BAR versioni -->
+    <div class="tab-bar">
+      <button
+        *ngFor="let g of getFilteredEncounters()"
+        class="tab-btn"
+        [class.active]="activeTab() === g.version"
+        (click)="selectTab(g.version)"
+      >
+        {{ g.versionLabel }}
+        <span class="tab-count">{{ g.rows.length }}</span>
+      </button>
+    </div>
+
+    <!-- GRIGLIA incontri per la versione attiva -->
+    <ng-container *ngIf="activeGroup() as group">
+
+      <div class="table-wrap" *ngIf="group.rows.length; else noRows">
+        <table class="enc-table">
+          <thead>
+            <tr>
+              <th class="col-location">Zona / Luogo</th>
+              <th class="col-method">Metodo</th>
+              <th class="col-level">Livello</th>
+              <th class="col-chance">Prob.</th>
+              <th class="col-cond">Condizioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of group.rows">
+              <!-- ZONA -->
+              <td class="cell-location">{{ row.locationLabel }}</td>
+              <!-- METODO -->
+              <td class="cell-method">
+                <span class="method-pill" [attr.data-method]="row.method">
+                  {{ row.methodIt }}
+                </span>
+              </td>
+              <!-- LIVELLO -->
+              <td class="cell-level">
+                <span class="level-badge">{{ levelRange(row.minLevel, row.maxLevel) }}</span>
+              </td>
+              <td class="cell-chance">
+                <div class="chance-wrap">
+                  <div class="chance-bar-bg">
+                    <div class="chance-bar-fill" [style.width.%]="row.chance"></div>
+                  </div>
+                  <span class="chance-value">{{ row.chance }}%</span>
+                </div>
+              </td>
+              <td class="cell-cond">
+                <span class="cond-text" *ngIf="row.conditions">{{ row.conditions }}</span>
+                <span class="cond-none" *ngIf="!row.conditions">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #noRows>
+        <p class="enc-no-rows">Nessun incontro registrato per questa versione.</p>
+      </ng-template>
+
+    </ng-container>
+
+  </ng-container>
+</div>

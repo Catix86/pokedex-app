@@ -1,0 +1,265 @@
+// ---- LOADING ----
+.enc-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  padding: 4px 0;
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ---- EMPTY ----
+.enc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-muted);
+
+  p { font-size: 0.88rem; line-height: 1.6; max-width: 420px; }
+}
+.enc-empty-icon { font-size: 2.5rem; }
+.enc-no-rows {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  padding: 8px 0;
+}
+
+// ---- TAB BAR ----
+.tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+
+  &:hover:not(.active) {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+
+    .tab-count {
+      background: rgba(0, 0, 0, 0.18);
+      color: #000;
+    }
+  }
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--bg-hover);
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+// ---- TABELLA ----
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.enc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+
+  thead tr { background: var(--bg-surface); }
+
+  th {
+    padding: 11px 16px;
+    text-align: left;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    font-weight: 700;
+
+    &.col-level  { width: 110px; }
+    &.col-chance { width: 130px; }
+    &.col-method { width: 150px; }
+    &.col-cond   { width: 180px; }
+  }
+
+  td {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    vertical-align: middle;
+    color: var(--text-secondary);
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  tbody tr:hover td {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+}
+
+// Zona
+.cell-location {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+// Metodo pill
+.method-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &[data-method='walk'],
+  &[data-method='tall-grass'] {
+    background: rgba(120, 200, 80, 0.12);
+    color: #78c850;
+    border: 1px solid rgba(120, 200, 80, 0.3);
+  }
+  &[data-method='surf'],
+  &[data-method='seagrass'] {
+    background: rgba(104, 144, 240, 0.12);
+    color: #6890f0;
+    border: 1px solid rgba(104, 144, 240, 0.3);
+  }
+  &[data-method='old-rod'],
+  &[data-method='good-rod'],
+  &[data-method='super-rod'],
+  &[data-method='fishing'] {
+    background: rgba(224, 192, 104, 0.12);
+    color: #e0c068;
+    border: 1px solid rgba(224, 192, 104, 0.3);
+  }
+  &[data-method='rock-smash'] {
+    background: rgba(176, 160, 56, 0.12);
+    color: #b8a038;
+    border: 1px solid rgba(176, 160, 56, 0.3);
+  }
+  &[data-method='gift'],
+  &[data-method='gift-egg'],
+  &[data-method='only-one'] {
+    background: rgba(238, 153, 172, 0.12);
+    color: #ee99ac;
+    border: 1px solid rgba(238, 153, 172, 0.3);
+  }
+  &[data-method='overworld'] {
+    background: rgba(251, 191, 36, 0.12);
+    color: var(--accent);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+  }
+  // fallback
+  &:not([data-method='walk']):not([data-method='tall-grass']):not([data-method='surf']):not([data-method='seagrass']):not([data-method='old-rod']):not([data-method='good-rod']):not([data-method='super-rod']):not([data-method='fishing']):not([data-method='rock-smash']):not([data-method='gift']):not([data-method='gift-egg']):not([data-method='only-one']):not([data-method='overworld']) {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+}
+
+// Livello
+.level-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(168, 136, 240, 0.12);
+  color: #a890f0;
+  border: 1px solid rgba(168, 136, 240, 0.25);
+  white-space: nowrap;
+  width: 80px;
+  text-align: center;
+}
+
+// Probabilità
+.chance-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chance-bar-bg {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-surface);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 50px;
+}
+
+.chance-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  transition: width 0.5s ease;
+}
+
+.chance-value {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #22c55e;
+  white-space: nowrap;
+  min-width: 32px;
+  text-align: right;
+}
+
+// Condizioni
+.cond-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.cond-none {
+  color: var(--border);
+}
