@@ -8,7 +8,7 @@
     </div>
 
     <div class="card-body">
-        <h3 class="card-name">{{ service.formatName(pokemon.name) }}</h3>
+        <h3 class="card-name">{{ service.formatPokemonName(pokemon.name) }}</h3>
         <div class="card-types">
             @for(type of pokemon.types; track type) {
             <span class="type-badge" [style.background]="getTypeColor(type)">{{ getTypeName(type) }}</span>

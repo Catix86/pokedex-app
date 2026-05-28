@@ -22,6 +22,7 @@ export class PokemonMovesByVersionComponent implements OnChanges {
   @Input({ required: true }) detail!: PokemonDetail;
 
   private service = inject(PokemonService);
+  private damageClassFilters = signal<Record<string, string>>({});
 
   versionGroups = signal<VersionGroupMoves[]>([]);
   activeTab = signal<string>('');
@@ -95,8 +96,6 @@ export class PokemonMovesByVersionComponent implements OnChanges {
     ),
     { initialValue: [] as MoveVersionRowDetail[] }
   );
-
-  private damageClassFilters = signal<Record<string, string>>({});
 
   public getTypeName(type: string): string {
     return this.service.getTypeName(type);

@@ -32,7 +32,7 @@ import {
 } from '../models/pokemon.model';
 
 const API_BASE = 'https://pokeapi.co/api/v2';
-export const TOTAL_POKEMON = 1025; //1350; // fino a Gen IX
+export const TOTAL_POKEMON = 1025; // fino a Gen IX
 
 @Injectable({ providedIn: 'root' })
 export class PokemonService {
@@ -43,14 +43,17 @@ export class PokemonService {
   private detailCache = new Map<number, PokemonDetail>();
   private speciesCache = new Map<number, PokemonSpecies>();
   private moveCache = new Map<string, MoveDetail>();
+  private movesByVersionCache = new Map<number, VersionGroupMoves[]>();
   private evolutionCache = new Map<string, EvolutionStage[]>();
   private encountersCache = new Map<number, EncounterByVersion[]>();
+  private varietiesCache = new Map<number, PokemonVariety[]>();
+
   /**
    * 1 chiamata per la lista base, poi 18 chiamate /type/{name} per i tipi.
    * Totale: 19 chiamate invece di 1025. La typeMap viene costruita una volta
    * sola e applicata all'intera lista in memoria.
    */
-  getAllPokemon(): Observable<PokemonListItem[]> {
+  public getAllPokemon(): Observable<PokemonListItem[]> {
     if (this.listCache) return of(this.listCache);
 
     const ALL_TYPES = Object.keys(TYPE_COLORS);
@@ -101,35 +104,8 @@ export class PokemonService {
     );
   }
 
-  /** Carica la lista completa dei Pokémon con sprite e tipi */
-  getAllPokemon2(): Observable<PokemonListItem[]> {
-    if (this.listCache) {
-      return of(this.listCache);
-    }
-
-    return this.http
-      .get<{ results: { name: string; url: string }[] }>(
-        `${API_BASE}/pokemon?limit=${TOTAL_POKEMON}&offset=0`
-      )
-      .pipe(
-        map((res) =>
-          res.results.map((p, i) => {
-            const id = this.extractIdFromUrl(p.url);
-            return {
-              name: p.name,
-              url: p.url,
-              id,
-              sprite: this.getSpriteUrl(id),
-              types: [], // popolati lazy
-            };
-          })
-        ),
-        tap((list) => (this.listCache = list))
-      );
-  }
-
   /** Dettaglio completo di un singolo Pokémon */
-  getPokemonDetail(id: number): Observable<PokemonDetail> {
+  public getPokemonDetail(id: number): Observable<PokemonDetail> {
     if (this.detailCache.has(id)) {
       return of(this.detailCache.get(id)!);
     }
@@ -142,7 +118,7 @@ export class PokemonService {
   }
 
   /** Dati della specie (descrizione, generazione, ecc.) */
-  getPokemonSpecies(id: number): Observable<PokemonSpecies> {
+  public getPokemonSpecies(id: number): Observable<PokemonSpecies> {
     if (this.speciesCache.has(id)) {
       return of(this.speciesCache.get(id)!);
     }
@@ -155,7 +131,7 @@ export class PokemonService {
   }
 
   /** Dettaglio completo di un singolo Pokémon */
-  getPokemonAbility(url: string): Observable<AbilityDetail> {
+  public getPokemonAbility(url: string): Observable<AbilityDetail> {
     return this.http
       .get<AbilityDetail>(url)
       .pipe(tap((p) => {
@@ -164,7 +140,7 @@ export class PokemonService {
   }
 
   /** Carica la catena evolutiva e la trasforma in stages per il display */
-  getEvolutionChain(url: string): Observable<EvolutionStage[]> {
+  public getEvolutionChain(url: string): Observable<EvolutionStage[]> {
     if (this.evolutionCache.has(url)) return of(this.evolutionCache.get(url)!);
     return this.http.get<EvolutionChain>(url).pipe(
       map(chain => this.flattenChain(chain.chain)),
@@ -173,7 +149,7 @@ export class PokemonService {
   }
 
   /** Carica dettaglio + specie insieme */
-  getPokemonFull(
+  public getPokemonFull(
     id: number
   ): Observable<{ detail: PokemonDetail; species: PokemonSpecies }> {
     return this.getPokemonDetail(id).pipe(
@@ -185,33 +161,11 @@ export class PokemonService {
     );
   }
 
-  /** Carica i tipi di un batch di Pokémon (usato per pre-populate la lista) */
-  enrichWithTypes(items: PokemonListItem[]): Observable<PokemonListItem[]> {
-    const requests = items.map((item) =>
-      this.getPokemonDetail(item.id).pipe(
-        map((detail) => ({
-          ...item,
-          types: detail.types.map((t) => t.type.name),
-        }))
-      )
-    );
-    return forkJoin(requests);
-  }
-
-  private extractIdFromUrl(url: string): number {
-    const parts = url.split('/').filter(Boolean);
-    return parseInt(parts[parts.length - 1], 10);
-  }
-
-  getSpriteUrl(id: number): string {
-    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
-  }
-
-  getSmallSpriteUrl(id: number): string {
+  public getSmallSpriteUrl(id: number): string {
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
   }
 
-  formatName(name: string): string {
+  public formatPokemonName(name: string): string {
     const result = [];
 
     const nameParts = name
@@ -248,7 +202,7 @@ export class PokemonService {
     return result.join(' ');
   }
 
-  padId(id: number): string {
+  public padId(id: number): string {
     return id.toString().padStart(4, '0');
   }
 
@@ -295,33 +249,6 @@ export class PokemonService {
     }
   }
 
-  public getColorName(color: string): string {
-    switch (color) {
-      case 'black':
-        return 'Nero';
-      case 'blue':
-        return 'Blu';
-      case 'brown':
-        return 'Marrone';
-      case 'gray':
-        return 'Grigio';
-      case 'green':
-        return 'Verde';
-      case 'pink':
-        return 'Rosa';
-      case 'purple':
-        return 'Viola';
-      case 'red':
-        return 'Rosso';
-      case 'white':
-        return 'Bianco';
-      case 'yellow':
-        return 'Giallo';
-      default:
-        return color;
-    }
-  }
-
   public getGrowthRateName(rate: string): string {
     switch (rate) {
       case 'slow':
@@ -365,14 +292,12 @@ export class PokemonService {
     }
   }
 
-  // ---- VARIETIES ----
-  private varietiesCache = new Map<number, PokemonVariety[]>();
-
+  //#region ---- VARIETIES ----
   /**
    * Restituisce le varieties di una specie come array PokemonVariety[].
    * Ogni variety viene arricchita con id e sprite tramite la cache detailCache.
    */
-  getVarieties(species: PokemonSpecies, currentId: number): Observable<PokemonVariety[]> {
+  public getVarieties(species: PokemonSpecies, currentId: number): Observable<PokemonVariety[]> {
     if (this.varietiesCache.has(currentId)) {
       return of(this.varietiesCache.get(currentId)!);
     }
@@ -399,7 +324,7 @@ export class PokemonService {
   }
 
   /** Deriva un'etichetta leggibile dal nome slug della variety */
-  buildVarietyLabel(pokemonName: string, species: PokemonSpecies): string {
+  private buildVarietyLabel(pokemonName: string, species: PokemonSpecies): string {
     const speciesName = species.name;
     // Rimuove il prefisso della specie base, es. "charizard-mega-x" → "mega-x"
     const suffix = pokemonName.startsWith(speciesName + '-')
@@ -407,65 +332,26 @@ export class PokemonService {
       : pokemonName;
 
     if (!suffix || suffix === pokemonName) {
-      return this.formatName(pokemonName);
+      return this.formatPokemonName(pokemonName);
     }
 
-    return VARIETY_LABELS[suffix] ?? this.formatName(suffix);
+    return VARIETY_LABELS[suffix] ?? this.formatPokemonName(suffix);
   }
 
-  // ---- MOSSE PER VERSION GROUP ----
+  //#endregion
 
-  /** Carica i dettagli di una mossa */
-  getMoveDetail(name: string): Observable<MoveDetail> {
-    if (this.moveCache.has(name)) {
-      return of(this.moveCache.get(name)!);
-    }
-
-    return this.http.get<any>(`${API_BASE}/move/${name}`).pipe(
-      map(data => {
-        const nameIt = data.names?.find((n: any) => n.language.name === 'it')?.name
-          ?? data.names?.find((n: any) => n.language.name === 'en')?.name
-          ?? this.formatName(name);
-
-        const move: MoveDetail = {
-          name,
-          nameIt,
-          type: data.type?.name ?? '',
-          damageClass: data.damage_class?.name ?? 'status',
-          power: data.power,
-          accuracy: data.accuracy,
-          pp: data.pp,
-          flavor_text: data.flavor_text_entries?.filter((f: FlavorTextEntry) => f.language.name === 'it')?.map((f: any) => f.flavor_text)[0] ?? 'N.D.',
-        };
-        this.moveCache.set(name, move);
-        return move;
-      }),
-      catchError(() => of({
-        name, nameIt: this.formatName(name),
-        type: '', damageClass: 'status', power: null, accuracy: null, pp: null, flavor_text: 'N.D.'
-      }))
-    );
-  }
-
+  //#region ---- MOSSE ----
   /** Carica le mosse (in batch per non sovraccaricare) */
-  getPokemonMoves(detail: PokemonDetail, limit = 30): Observable<MoveDetail[]> {
+  public getPokemonMoves(detail: PokemonDetail, limit = 30): Observable<MoveDetail[]> {
     const moves = detail.moves.slice(0, limit);
     return forkJoin(moves.map(m => this.getMoveDetail(m.move.name)));
   }
-
-  /** Carica le mosse (in batch per non sovraccaricare) */
-  getPokemonSelectedMoves(rows: MoveByVersionRow[]): Observable<MoveDetail[]> {
-    const moves = rows.map(r => r.moveName);
-    return forkJoin(moves.map(m => this.getMoveDetail(m)));
-  }
-
-  private movesByVersionCache = new Map<number, VersionGroupMoves[]>();
 
   /**
    * Costruisce la struttura VersionGroupMoves[] a partire dai dati grezzi
    * del Pokémon, poi arricchisce i nomi delle mosse in italiano in batch.
    */
-  getMovesByVersionGroup(detail: PokemonDetail): Observable<VersionGroupMoves[]> {
+  public getMovesByVersionGroup(detail: PokemonDetail): Observable<VersionGroupMoves[]> {
     if (this.movesByVersionCache.has(detail.id)) {
       return of(this.movesByVersionCache.get(detail.id)!);
     }
@@ -479,16 +365,17 @@ export class PokemonService {
         if (!vgMap.has(vgKey)) {
           vgMap.set(vgKey, {
             versionGroup: vgKey,
-            versionGroupLabel: VERSION_GROUP_LABELS[vgKey] ?? this.formatName(vgKey),
+            versionGroupLabel: VERSION_GROUP_LABELS[vgKey] ?? this.formatPokemonName(vgKey),
             rows: [],
           });
         }
         vgMap.get(vgKey)!.rows.push({
           moveName: slot.move.name,
-          moveNameIt: this.formatName(slot.move.name), // placeholder
+          moveNameIt: this.formatPokemonName(slot.move.name), // placeholder
           levelLearnedAt: vgd.level_learned_at,
           learnMethod: vgd.move_learn_method.name,
-          learnMethodIt: LEARN_METHOD_IT[vgd.move_learn_method.name] ?? this.formatName(vgd.move_learn_method.name),
+          learnMethodIt:
+            LEARN_METHOD_IT[vgd.move_learn_method.name] ?? this.formatPokemonName(vgd.move_learn_method.name),
         });
       }
     }
@@ -552,29 +439,72 @@ export class PokemonService {
     );
   }
 
-  formatEvolutionTrigger(details: EvolutionDetail[]): string {
-    if (!details || details.length === 0) return '';
+  /** Carica le mosse (in batch per non sovraccaricare) */
+  public getPokemonSelectedMoves(rows: MoveByVersionRow[]): Observable<MoveDetail[]> {
+    const moves = rows.map(r => r.moveName);
+    return forkJoin(moves.map(m => this.getMoveDetail(m)));
+  }
+
+  /** Carica i dettagli di una mossa */
+  private getMoveDetail(name: string): Observable<MoveDetail> {
+    if (this.moveCache.has(name)) {
+      return of(this.moveCache.get(name)!);
+    }
+
+    return this.http.get<any>(`${API_BASE}/move/${name}`).pipe(
+      map(data => {
+        const nameIt = data.names?.find((n: any) => n.language.name === 'it')?.name
+          ?? data.names?.find((n: any) => n.language.name === 'en')?.name
+          ?? this.formatPokemonName(name);
+
+        const move: MoveDetail = {
+          name,
+          nameIt,
+          type: data.type?.name ?? '',
+          damageClass: data.damage_class?.name ?? 'status',
+          power: data.power,
+          accuracy: data.accuracy,
+          pp: data.pp,
+          flavor_text: data.flavor_text_entries?.filter((f: FlavorTextEntry) => f.language.name === 'it')?.map((f: any) => f.flavor_text)[0] ?? 'N.D.',
+        };
+        this.moveCache.set(name, move);
+        return move;
+      }),
+      catchError(() => of({
+        name, nameIt: this.formatPokemonName(name),
+        type: '', damageClass: 'status', power: null, accuracy: null, pp: null, flavor_text: 'N.D.'
+      }))
+    );
+  }
+
+  public formatEvolutionTrigger(details: EvolutionDetail[]): string {
+    if (!details || details.length === 0) {
+      return '';
+    }
+
     const d = details[0];
     const parts: string[] = [];
     const trigger = TRIGGER_IT[d.trigger?.name] ?? d.trigger?.name ?? '';
     parts.push(trigger);
+
     if (d.min_level) parts.push(`Liv. ${d.min_level}`);
-    if (d.item) parts.push(`Oggetto: ${this.formatName(d.item.name)}`);
-    if (d.held_item) parts.push(`Tieni: ${this.formatName(d.held_item.name)}`);
-    if (d.known_move) parts.push(`Mossa: ${this.formatName(d.known_move.name)}`);
-    if (d.location) parts.push(`Luogo: ${this.formatName(d.location.name)}`);
+    if (d.item) parts.push(`Oggetto: ${this.formatPokemonName(d.item.name)}`);
+    if (d.held_item) parts.push(`Tieni: ${this.formatPokemonName(d.held_item.name)}`);
+    if (d.known_move) parts.push(`Mossa: ${this.formatPokemonName(d.known_move.name)}`);
+    if (d.location) parts.push(`Luogo: ${this.formatPokemonName(d.location.name)}`);
     if (d.min_happiness) parts.push(`Amicizia ≥ ${d.min_happiness}`);
     if (d.min_affection) parts.push(`Affetto ≥ ${d.min_affection}`);
     if (d.time_of_day) parts.push(d.time_of_day === 'day' ? 'Di giorno' : d.time_of_day === 'night' ? 'Di notte' : '');
     if (d.needs_overworld_rain) parts.push('Con pioggia');
-    if (d.trade_species) parts.push(`Scambia con: ${this.formatName(d.trade_species.name)}`);
+    if (d.trade_species) parts.push(`Scambia con: ${this.formatPokemonName(d.trade_species.name)}`);
     if (d.turn_upside_down) parts.push('Capovolgi console');
     if (d.gender === 1) parts.push('Femmina');
     if (d.gender === 2) parts.push('Maschio');
+
     return parts.filter(Boolean).join(' · ');
   }
 
-  // ---- TIPO EFFICACIA ----
+  //#endregion
 
   /**
    * Calcola l'efficacia di tutti i 18 tipi attaccanti contro la combinazione
@@ -619,7 +549,7 @@ export class PokemonService {
   }
 
   /** Formatta il moltiplicatore come stringa leggibile */
-  formatMultiplier(m: number): string {
+  public formatMultiplier(m: number): string {
     if (m === 0) return '0×';
     if (m === 0.25) return '¼×';
     if (m === 0.5) return '½×';
@@ -665,13 +595,13 @@ export class PokemonService {
     }
   }
 
-  // ---- INCONTRI ----
+  //#region ---- INCONTRI ----
 
   /**
    * Chiama l'endpoint location_area_encounters del Pokémon,
    * raggruppa i risultati per versione gioco e li ordina cronologicamente.
    */
-  getEncounters(pokemonId: number): Observable<EncounterByVersion[]> {
+  public getEncounters(pokemonId: number): Observable<EncounterByVersion[]> {
     if (this.encountersCache.has(pokemonId)) {
       return of(this.encountersCache.get(pokemonId)!);
     }
@@ -700,8 +630,8 @@ export class PokemonService {
         if (!versionMap.has(vSlug)) {
           versionMap.set(vSlug, {
             version: vSlug,
-            versionLabel: VERSION_LABELS_IT[vSlug] ?? this.formatName(vSlug),
-            gameLabel: VERSION_LABELS_IT[vSlug] ?? this.formatName(vSlug),
+            versionLabel: VERSION_LABELS_IT[vSlug] ?? this.formatPokemonName(vSlug),
+            gameLabel: VERSION_LABELS_IT[vSlug] ?? this.formatPokemonName(vSlug),
             rows: [],
           });
         }
@@ -711,13 +641,13 @@ export class PokemonService {
         for (const enc of vd.encounter_details) {
           const methodSlug = enc.method.name;
           const conditions = enc.condition_values
-            .map(c => this.formatName(c.name))
+            .map(c => this.formatPokemonName(c.name))
             .join(', ');
 
           // Verifica se esiste già una riga per questa location+metodo+condizioni
           const existing = group.rows.find(r =>
             r.locationArea === rawLocation &&
-            r.methodIt === (ENCOUNTER_METHOD_IT[methodSlug] ?? this.formatName(methodSlug)) &&
+            r.methodIt === (ENCOUNTER_METHOD_IT[methodSlug] ?? this.formatPokemonName(methodSlug)) &&
             r.conditions === conditions &&
             r.minLevel === enc.min_level &&
             r.maxLevel === enc.max_level
@@ -733,7 +663,7 @@ export class PokemonService {
               maxLevel: enc.max_level,
               chance: enc.chance,
               method: methodSlug,
-              methodIt: ENCOUNTER_METHOD_IT[methodSlug] ?? this.formatName(methodSlug),
+              methodIt: ENCOUNTER_METHOD_IT[methodSlug] ?? this.formatPokemonName(methodSlug),
               conditions,
             });
           }
@@ -764,20 +694,8 @@ export class PokemonService {
     return sorted;
   }
 
-  private deduplicateRows(rows: EncounterRow[]): EncounterRow[] {
-    const seen = new Map<string, EncounterRow>();
-    for (const row of rows) {
-      const key = `${row.locationArea}|${row.method}|${row.conditions}`;
-      const existing = seen.get(key);
-      if (!existing || row.chance > existing.chance) {
-        seen.set(key, row);
-      }
-    }
-    return Array.from(seen.values());
-  }
-
   /** Converte uno slug location-area in etichetta leggibile */
-  formatLocationArea(slug: string): string {
+  private formatLocationArea(slug: string): string {
     // Rimuove i prefissi ridondanti come "kanto-", "alola-", "galar-", "hisui-"
     let fixed = slug.replace(/^(kanto|alola|galar|hisui|sinnoh|johto|kalos)-/, '');
 
@@ -872,5 +790,28 @@ export class PokemonService {
       .join(' ')
       // Rimuovi suffisso "-area" ridondante alla fine
       .replace(/ Area$/, '');
+  }
+
+  private deduplicateRows(rows: EncounterRow[]): EncounterRow[] {
+    const seen = new Map<string, EncounterRow>();
+    for (const row of rows) {
+      const key = `${row.locationArea}|${row.method}|${row.conditions}`;
+      const existing = seen.get(key);
+      if (!existing || row.chance > existing.chance) {
+        seen.set(key, row);
+      }
+    }
+    return Array.from(seen.values());
+  }
+
+  //#endregion
+
+  private extractIdFromUrl(url: string): number {
+    const parts = url.split('/').filter(Boolean);
+    return parseInt(parts[parts.length - 1], 10);
+  }
+
+  private getSpriteUrl(id: number): string {
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
   }
 }

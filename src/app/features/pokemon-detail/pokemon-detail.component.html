@@ -77,10 +77,10 @@
           </span>
         </p>
         <h1 class="pokemon-name">
-          <a href="https://wiki.pokemoncentral.it/{{ service.formatName(d.name) }}" target="_blank" class="box"
+          <a href="https://wiki.pokemoncentral.it/{{ service.formatPokemonName(d.name) }}" target="_blank" class="box"
             [attr.data-param]="species()?.color?.name" rel="noopener noreferrer"
             title="Apri la pagina del Pokemon in pokemoncentral.it">
-            {{ service.formatName(d.name) }}
+            {{ service.formatPokemonName(d.name) }}
           </a>
         </h1>
 
@@ -213,7 +213,7 @@
           <div class="evo-node" *ngFor="let node of stage.nodes" (click)="goToPokemon(node.id)"
             [class.current]="node.id === d.id">
             <img [src]="node.sprite" [alt]="node.name" (error)="onEvoImgError($event, node.id)" />
-            <span class="evo-name">{{ service.formatName(node.name) }}</span>
+            <span class="evo-name">{{ service.formatPokemonName(node.name) }}</span>
             <span class="evo-id">#{{ service.padId(node.id) }}</span>
           </div>
         </div>
